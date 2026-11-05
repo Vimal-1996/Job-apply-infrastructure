@@ -94,7 +94,7 @@ resource "aws_route_table_association" "db" {
 # Free gateway endpoint: S3 traffic (e.g. ECR image layers) skips the NAT.
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = aws_vpc.this.id
-  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  service_name      = "com.amazonaws.${data.aws_region.current.region}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [aws_route_table.private.id]
   tags              = { Name = "${var.name}-s3" }
