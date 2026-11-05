@@ -27,6 +27,22 @@ variable "budget_email" {
   type        = string
 }
 
+variable "allowed_emails" {
+  description = "Emails allowed to have an account (single-user app)."
+  type        = list(string)
+}
+
+variable "google_client_id" {
+  type    = string
+  default = ""
+}
+
+variable "google_client_secret" {
+  type      = string
+  default   = ""
+  sensitive = true
+}
+
 module "vpc" {
   source   = "../../../modules/vpc"
   name     = "job-apply-dev"
@@ -40,6 +56,20 @@ module "budget" {
   name   = "job-apply"
   email  = var.budget_email
 }
+
+module "cognito" {
+  source               = "../../../modules/cognito"
+  name                 = "job-apply-dev"
+  allowed_emails       = var.allowed_emails
+  google_client_id     = var.google_client_id
+  google_client_secret = var.google_client_secret
+}
+
+output "cognito_user_pool_id" { value = module.cognito.user_pool_id }
+output "cognito_web_client_id" { value = module.cognito.web_client_id }
+output "cognito_issuer" { value = module.cognito.issuer }
+output "cognito_jwks_url" { value = module.cognito.jwks_url }
+output "cognito_hosted_ui_domain" { value = module.cognito.hosted_ui_domain }
 
 output "vpc_id" { value = module.vpc.vpc_id }
 output "public_subnet_ids" { value = module.vpc.public_subnet_ids }
