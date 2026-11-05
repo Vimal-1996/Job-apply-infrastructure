@@ -1,6 +1,6 @@
 terraform {
   required_providers {
-    aws     = { source = "hashicorp/aws", version = "~> 5.0" }
+    aws     = { source = "hashicorp/aws", version = ">= 6.0" }
     archive = { source = "hashicorp/archive", version = "~> 2.0" }
   }
 }
@@ -119,6 +119,18 @@ resource "aws_cognito_user_group" "this" {
 resource "aws_cognito_user_pool_domain" "this" {
   domain       = "${var.name}-${data.aws_caller_identity.current.account_id}"
   user_pool_id = aws_cognito_user_pool.this.id
+
+  # 2 = Managed Login (modern, brandable pages; needs the Essentials tier and a
+  # branding style below). 1 = classic Hosted UI.
+  managed_login_version = 2
+}
+
+# Managed Login renders "Login pages unavailable" for a client with no style.
+# Start from Cognito's default look; colours/logo can be layered on later.
+resource "aws_cognito_managed_login_branding" "web" {
+  user_pool_id                = aws_cognito_user_pool.this.id
+  client_id                   = aws_cognito_user_pool_client.web.id
+  use_cognito_provided_values = true
 }
 
 # ---------- Optional Google IdP ----------
