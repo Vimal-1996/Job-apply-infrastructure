@@ -1,5 +1,7 @@
 name: env-up-down
 
+run-name: env-up-down | ${{ inputs.env || 'dev' }} | ${{ inputs.action || 'down' }}${{ github.event_name == 'schedule' && ' (scheduled)' || '' }}
+
 # Bring the billable "runtime" stack of an environment up or down.
 # Persistent resources (VPC, Cognito, ECR, ...) are never touched.
 on:
