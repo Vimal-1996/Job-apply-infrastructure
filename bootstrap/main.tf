@@ -63,10 +63,10 @@ resource "aws_s3_bucket_policy" "tfstate" {
 }
 
 # ---------- GitHub Actions OIDC (no long-lived keys) ----------
-resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+# An account can hold only one GitHub OIDC provider, and this account already
+# has one (client_id sts.amazonaws.com), so reference it instead of creating it.
+data "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
 }
 
 # One role per repo/environment. Trust is scoped to the exact repo and the
@@ -81,7 +81,7 @@ data "aws_iam_policy_document" "github_trust" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [data.aws_iam_openid_connect_provider.github.arn]
     }
     condition {
       test     = "StringEquals"

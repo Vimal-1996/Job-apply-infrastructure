@@ -7,8 +7,14 @@ terraform {
       version = "~> 5.0"
     }
   }
-  # Bootstrap uses local state on first run; after apply, migrate it to the
-  # S3 bucket it creates (see README).
+
+  backend "s3" {
+    bucket       = "job-apply-tfstate-418272768931-us-east-1"
+    key          = "bootstrap/terraform.tfstate"
+    region       = "us-east-1"
+    encrypt      = true
+    use_lockfile = true
+  }
 }
 
 provider "aws" {
