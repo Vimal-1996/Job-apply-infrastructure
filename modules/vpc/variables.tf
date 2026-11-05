@@ -1,0 +1,15 @@
+variable "name" {
+  description = "Name prefix including the environment suffix, e.g. job-apply-dev."
+  type        = string
+}
+
+variable "cidr" {
+  type    = string
+  default = "10.0.0.0/16"
+}
+
+variable "az_count" {
+  description = "Number of AZs. Aurora needs >= 2 for its subnet group, so keep 2+ even in dev."
+  type        = number
+  default     = 2
+}
