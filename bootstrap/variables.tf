@@ -30,3 +30,18 @@ variable "environments" {
   type        = list(string)
   default     = ["dev", "staging", "prod"]
 }
+
+variable "repo_sub_prefixes" {
+  description = <<-EOT
+    OIDC subject prefix per repo. These GitHub repos use immutable subjects
+    (owner/repo numeric IDs), so the token `sub` is
+    "repo:<owner>@<ownerId>/<repo>@<repoId>:environment:<env>", not the
+    name-only form. Read it with:
+    gh api repos/<owner>/<repo>/actions/oidc/customization/sub
+  EOT
+  type        = map(string)
+  default = {
+    "Job-apply-infrastructure"         = "repo:Vimal-1996@85448052/Job-apply-infrastructure@1447388634"
+    "Job-apply-enterprise-application" = "repo:Vimal-1996@85448052/Job-apply-enterprise-application@1447388512"
+  }
+}
