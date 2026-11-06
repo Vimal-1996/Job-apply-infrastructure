@@ -38,6 +38,7 @@ resource "aws_iam_role_policy_attachment" "pre_signup_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# Allows ALLOWED_EMAILS through self sign-up / Google; admin-created users always pass.
 resource "aws_lambda_function" "pre_signup" {
   function_name    = "${var.name}-cognito-presignup"
   role             = aws_iam_role.pre_signup.arn
@@ -89,8 +90,23 @@ resource "aws_cognito_user_pool" "this" {
   }
 
   # Sign-up for native accounts is admin-only; the Lambda also gates Google.
+  # Admins add users from the portal: Cognito generates a temporary password
+  # (valid temporary_password_validity_days) and emails it with this template.
   admin_create_user_config {
     allow_admin_create_user_only = true
+
+    invite_message_template {
+      email_subject = "Your ${var.app_name} account"
+      email_message = <<-EOT
+        <p>Hello,</p>
+        <p>An administrator has created a ${var.app_name} account for you.</p>
+        <p>Username: <b>{username}</b><br>Temporary password: <b>{####}</b></p>
+        <p>Sign in at <a href="${var.app_url}">${var.app_url}</a>. You will be asked to choose a new password and set up an authenticator app.</p>
+        <p>The temporary password expires in 3 days. If it has expired, ask your administrator to resend the invitation.</p>
+      EOT
+      # Required by the API even though the app sends no SMS (MFA is TOTP only).
+      sms_message = "Your ${var.app_name} username is {username} and temporary password is {####}"
+    }
   }
 
   lambda_config {
