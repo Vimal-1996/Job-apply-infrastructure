@@ -19,11 +19,18 @@ variable "logout_urls" {
 }
 
 variable "groups" {
-  description = "Cognito groups (surface as the cognito:groups claim used for RBAC)."
+  description = <<-EOT
+    Cognito groups (surface as the cognito:groups claim). admin/user are roles
+    used for RBAC; inactive/deleted mark accounts an admin has deactivated or
+    soft-deleted in the app, which the API then refuses with a
+    "contact your administrator" message.
+  EOT
   type        = map(string)
   default = {
-    admin = "Full access"
-    user  = "Standard access"
+    admin    = "Full access"
+    user     = "Standard access"
+    inactive = "Deactivated by an administrator; sign-in is refused"
+    deleted  = "Deleted by an administrator (soft delete); sign-in is refused"
   }
 }
 
