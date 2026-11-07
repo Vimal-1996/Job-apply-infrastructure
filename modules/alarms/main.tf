@@ -16,6 +16,9 @@ variable "service_name" { type = string }
 variable "db_instance_id" { type = string }
 variable "distribution_id" { type = string }
 
+# CloudWatch alarms can't publish to a topic encrypted with the AWS-managed
+# SNS key, and alert texts aren't sensitive.
+#trivy:ignore:AWS-0095
 resource "aws_sns_topic" "alerts" {
   name = "${var.name}-alerts"
 }

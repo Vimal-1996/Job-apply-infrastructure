@@ -37,6 +37,8 @@ resource "aws_s3_bucket_ownership_controls" "this" {
   }
 }
 
+# Public brand assets: AWS-managed encryption is enough.
+#trivy:ignore:AWS-0132
 resource "aws_s3_bucket_server_side_encryption_configuration" "this" {
   bucket = aws_s3_bucket.this.id
   rule {
@@ -57,6 +59,8 @@ data "aws_cloudfront_cache_policy" "optimized" {
   name = "Managed-CachingOptimized"
 }
 
+# Serves a single public image (the email logo); a WAF adds cost without protecting anything.
+#trivy:ignore:AWS-0011
 resource "aws_cloudfront_distribution" "this" {
   enabled         = true
   comment         = "${var.name} public assets (email images)"

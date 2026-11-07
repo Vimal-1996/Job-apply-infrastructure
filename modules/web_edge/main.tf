@@ -37,6 +37,8 @@ resource "aws_s3_bucket_ownership_controls" "web" {
   }
 }
 
+# The web app's public static files: AWS-managed encryption is enough.
+#trivy:ignore:AWS-0132
 resource "aws_s3_bucket_server_side_encryption_configuration" "web" {
   bucket = aws_s3_bucket.web.id
   rule {

@@ -73,6 +73,8 @@ resource "aws_vpc_security_group_ingress_rule" "tasks_from_alb" {
   to_port                      = local.port
 }
 
+# Cognito has no VPC endpoint, so tasks reach it (and other AWS APIs) on 443 via the NAT.
+#trivy:ignore:AWS-0104
 resource "aws_vpc_security_group_egress_rule" "tasks_https" {
   security_group_id = aws_security_group.tasks.id
   cidr_ipv4         = "0.0.0.0/0"
@@ -119,6 +121,10 @@ resource "aws_lb_target_group" "api" {
   }
 }
 
+# Internal load balancer with no public address; only CloudFront's
+# VPC origin reaches it, over the AWS network. HTTPS needs a certificate for a
+# domain we don't have yet; revisit when one is added.
+#trivy:ignore:AWS-0054
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.this.arn
   port              = 80
