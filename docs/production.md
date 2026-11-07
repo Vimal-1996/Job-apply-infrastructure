@@ -20,7 +20,10 @@ Browser ──HTTPS──▶ CloudFront  https://<id>.cloudfront.net   (+ WAF)
 
 ## First-time setup
 
-1. **Infrastructure:** from `live/prod`, with `prod.auto.tfvars` containing `alarm_email = "..."`, run `terraform apply`.
+1. **Infrastructure:** Actions → **prod-apply** on `main`.
+   - Run it with mode `plan` to review, then with mode `apply` and type `apply prod`.
+   - It refuses any plan that would delete or replace the database, user pool, image registry or a bucket.
+   - By hand instead: `terraform apply` from `live/prod`, with `prod.auto.tfvars` containing `alarm_email = "..."`.
    - The API has no image yet, so its tasks fail to start until step 3. That's expected.
    - Confirm the **"AWS Notification – Subscription Confirmation"** email so alerts reach you.
 2. **GitHub:** the app repo needs an Environment named **`prod`**. The AWS deploy role trusts only that environment. Limit it to the `main` branch.
@@ -51,7 +54,7 @@ Browser ──HTTPS──▶ CloudFront  https://<id>.cloudfront.net   (+ WAF)
   - It deploys exactly that commit and re-runs the tests first.
   - The API rolls out with zero downtime. If the new tasks never become healthy, ECS rolls back automatically and the workflow fails.
   - The deployed image tag is recorded in SSM `/job-apply-prod/api/image-tag`. Terraform reads it, so infrastructure changes keep the running image.
-- **Infrastructure:** PR into `main`, review the plan, then `terraform apply` from `live/prod`.
+- **Infrastructure:** PR into `main`, then **prod-apply** (`plan`, then `apply`).
 
 ## Rolling back
 
@@ -63,14 +66,16 @@ Browser ──HTTPS──▶ CloudFront  https://<id>.cloudfront.net   (+ WAF)
 
 Production can be removed between releases to stop its costs (about $95–110/month), then rebuilt for the next one.
 
-**Tear down** (from `live/prod`):
-```sh
-terraform apply   -var allow_teardown=true   # relax deletion protection, allow non-empty buckets/registry, no final snapshot
-terraform destroy -var allow_teardown=true
-```
+**Tear down:** Actions → **prod-teardown** → Run workflow on `main`, then type `destroy prod`. The workflow:
+- does nothing if production isn't running;
+- relaxes the deletion protections, checking that this step only changes settings;
+- destroys everything, checking that plan only deletes;
+- removes the log groups AWS created itself, and fails if anything billable is left.
+
+By hand (from `live/prod`), the same thing is: save and apply `terraform plan -var allow_teardown=true -out=relax.tfplan`, then `terraform plan -destroy -var allow_teardown=true -out=destroy.tfplan`. Don't run the first step when `terraform state list` is empty: it would build production.
 Everything goes, **including the database and the Cognito user pool with all users**. Take a manual RDS snapshot first if the data matters.
 
-**Rebuild:** follow *First-time setup* above. `terraform apply` with the switch back at its default (`false`) restores all protections. Then run **deploy-prod** on `main` and create the first admin.
+**Rebuild:** follow *First-time setup* above. **prod-apply** always runs with the protections on. Then run **deploy-prod** on `main` and create the first admin.
 - **New URL:** the CloudFront address changes on every rebuild. Cognito, the API and the deploy settings pick it up automatically. Share the new URL from `terraform output url`.
 - **New user pool:** the pool is new and empty, so users from a previous build are gone.
 
