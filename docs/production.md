@@ -63,11 +63,13 @@ Browser ──HTTPS──▶ CloudFront  https://<id>.cloudfront.net   (+ WAF)
 
 Production can be removed between releases to stop its costs (about $95–110/month), then rebuilt for the next one.
 
-**Tear down** (from `live/prod`):
-```sh
-terraform apply   -var allow_teardown=true   # relax deletion protection, allow non-empty buckets/registry, no final snapshot
-terraform destroy -var allow_teardown=true
-```
+**Tear down:** Actions → **prod-teardown** → Run workflow on `main`, then type `destroy prod`. The workflow:
+- does nothing if production isn't running;
+- relaxes the deletion protections, checking that this step only changes settings;
+- destroys everything, checking that plan only deletes;
+- removes the log groups AWS created itself, and fails if anything billable is left.
+
+By hand (from `live/prod`), the same thing is: save and apply `terraform plan -var allow_teardown=true -out=relax.tfplan`, then `terraform plan -destroy -var allow_teardown=true -out=destroy.tfplan`. Don't run the first step when `terraform state list` is empty: it would build production.
 Everything goes, **including the database and the Cognito user pool with all users**. Take a manual RDS snapshot first if the data matters.
 
 **Rebuild:** follow *First-time setup* above. `terraform apply` with the switch back at its default (`false`) restores all protections. Then run **deploy-prod** on `main` and create the first admin.
