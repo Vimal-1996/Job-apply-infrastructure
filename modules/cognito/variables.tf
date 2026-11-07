@@ -68,3 +68,9 @@ variable "app_url" {
   type        = string
   default     = "http://localhost:5173"
 }
+
+variable "case_sensitive_usernames" {
+  description = "Set false on new pools so Jane@x.com and jane@x.com are one account. null = leave as is (changing it replaces the pool)."
+  type        = bool
+  default     = null
+}

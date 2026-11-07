@@ -81,6 +81,15 @@ resource "aws_cognito_user_pool" "this" {
   mfa_configuration   = "OPTIONAL"
   deletion_protection = var.deletion_protection ? "ACTIVE" : "INACTIVE"
 
+  # Can only be set when a pool is created (changing it replaces the pool and
+  # every account), so it's opt-in: new pools pass false; dev keeps its default.
+  dynamic "username_configuration" {
+    for_each = var.case_sensitive_usernames == null ? [] : [var.case_sensitive_usernames]
+    content {
+      case_sensitive = username_configuration.value
+    }
+  }
+
   software_token_mfa_configuration {
     enabled = true # TOTP authenticator apps only; no SMS (cost + SIM-swap risk)
   }
