@@ -1,0 +1,14 @@
+output "alb_arn" { value = aws_lb.this.arn }
+output "alb_arn_suffix" { value = aws_lb.this.arn_suffix }
+output "alb_dns_name" { value = aws_lb.this.dns_name }
+output "target_group_arn_suffix" { value = aws_lb_target_group.api.arn_suffix }
+output "tasks_security_group_id" { value = aws_security_group.tasks.id }
+output "cluster_name" { value = aws_ecs_cluster.this.name }
+output "service_name" { value = aws_ecs_service.api.name }
+output "task_family" { value = aws_ecs_task_definition.api.family }
+output "container_name" { value = "api" }
+output "execution_role_arn" { value = aws_iam_role.execution.arn }
+output "task_role_arn" { value = aws_iam_role.task.arn }
+output "image_tag_parameter_name" { value = aws_ssm_parameter.image_tag.name }
+output "image_tag_parameter_arn" { value = aws_ssm_parameter.image_tag.arn }
+output "log_group_name" { value = aws_cloudwatch_log_group.api.name }
