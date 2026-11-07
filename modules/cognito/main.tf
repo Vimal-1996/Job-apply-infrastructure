@@ -9,6 +9,15 @@ data "aws_caller_identity" "current" {}
 
 locals {
   google_enabled = var.google_client_id != ""
+
+  # Email header: logo + product name. Tables and inline styles because many
+  # email clients ignore stylesheets.
+  email_header = var.logo_url == "" ? "<p style=\"font:700 20px Arial,sans-serif;color:#161a26\">${var.app_name}</p>" : join("", [
+    "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 0 16px\"><tr>",
+    "<td style=\"padding-right:12px\"><img src=\"${var.logo_url}\" width=\"48\" height=\"48\" alt=\"${var.app_name} logo\" style=\"display:block;border:0\"></td>",
+    "<td style=\"font:700 22px Arial,sans-serif;color:#161a26\">${var.app_name}</td>",
+    "</tr></table>",
+  ])
 }
 
 # ---------- Pre-sign-up allowlist Lambda ----------
@@ -103,6 +112,7 @@ resource "aws_cognito_user_pool" "this" {
     invite_message_template {
       email_subject = "Your ${var.app_name} account"
       email_message = <<-EOT
+        ${local.email_header}
         <p>Hello,</p>
         <p>Your ${var.app_name} account is ready. If you didn't sign up and weren't expecting this, you can ignore this email.</p>
         <p>Username: <b>{username}</b><br>Temporary password: <b>{####}</b></p>
