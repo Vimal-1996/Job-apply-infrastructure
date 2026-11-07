@@ -13,3 +13,9 @@ variable "az_count" {
   type        = number
   default     = 2
 }
+
+variable "exclude_zone_ids" {
+  description = "AZ ids to avoid, e.g. use1-az3 (CloudFront VPC origins don't support it)."
+  type        = list(string)
+  default     = []
+}

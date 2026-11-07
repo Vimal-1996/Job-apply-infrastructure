@@ -2,7 +2,8 @@
 # endpoint). Anything that bills hourly (NAT, interface endpoints) lives in the
 # runtime stack so it can be destroyed when not developing.
 data "aws_availability_zones" "this" {
-  state = "available"
+  state            = "available"
+  exclude_zone_ids = var.exclude_zone_ids
 }
 
 data "aws_region" "current" {}
