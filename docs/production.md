@@ -59,6 +59,21 @@ Browser ──HTTPS──▶ CloudFront  https://<id>.cloudfront.net   (+ WAF)
 - **Web:** re-run with target `web` on an earlier commit. The bucket is versioned for 30 days if a file must be restored by hand.
 - **Database:** automated backups, kept 7 days, allow point-in-time restore to a new instance. Deletion protection is on, and a final snapshot is taken if it's ever deleted.
 
+## Tearing down and rebuilding
+
+Production can be removed between releases to stop its costs (about $95–110/month), then rebuilt for the next one.
+
+**Tear down** (from `live/prod`):
+```sh
+terraform apply   -var allow_teardown=true   # relax deletion protection, allow non-empty buckets/registry, no final snapshot
+terraform destroy -var allow_teardown=true
+```
+Everything goes, **including the database and the Cognito user pool with all users**. Take a manual RDS snapshot first if the data matters.
+
+**Rebuild:** follow *First-time setup* above. `terraform apply` with the switch back at its default (`false`) restores all protections. Then run **deploy-prod** on `main` and create the first admin.
+- **New URL:** the CloudFront address changes on every rebuild. Cognito, the API and the deploy settings pick it up automatically. Share the new URL from `terraform output url`.
+- **New user pool:** the pool is new and empty, so users from a previous build are gone.
+
 ## Watching it
 
 - **Alerts** (SNS → email): API 5xx errors, unhealthy containers, slow responses (p95 > 2 s), API or database CPU, low database storage, database connections, and site-wide 5xx rate.

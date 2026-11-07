@@ -9,6 +9,12 @@ variable "name" {
   type        = string
 }
 
+variable "force_delete" {
+  description = "Allow deleting the repository while it holds images (intentional teardown only)."
+  type        = bool
+  default     = false
+}
+
 variable "keep_images" {
   description = "How many images to keep (older ones are expired, so rollbacks reach this far)."
   type        = number
@@ -20,6 +26,7 @@ variable "keep_images" {
 resource "aws_ecr_repository" "this" {
   name                 = var.name
   image_tag_mutability = "IMMUTABLE"
+  force_delete         = var.force_delete
 
   image_scanning_configuration {
     scan_on_push = true

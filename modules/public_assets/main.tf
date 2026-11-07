@@ -19,7 +19,8 @@ locals {
 }
 
 resource "aws_s3_bucket" "this" {
-  bucket = "${var.name}-public-assets-${data.aws_caller_identity.current.account_id}"
+  bucket        = "${var.name}-public-assets-${data.aws_caller_identity.current.account_id}"
+  force_destroy = var.force_destroy
 }
 
 resource "aws_s3_bucket_public_access_block" "this" {

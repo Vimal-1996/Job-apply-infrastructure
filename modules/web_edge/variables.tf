@@ -21,3 +21,9 @@ variable "rate_limit_per_5min" {
   type        = number
   default     = 2000
 }
+
+variable "force_destroy" {
+  description = "Allow deleting the web bucket with its files (intentional teardown only)."
+  type        = bool
+  default     = false
+}
