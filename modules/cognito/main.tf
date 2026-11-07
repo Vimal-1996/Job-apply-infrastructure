@@ -90,8 +90,10 @@ resource "aws_cognito_user_pool" "this" {
   }
 
   # Sign-up for native accounts is admin-only; the Lambda also gates Google.
-  # Admins add users from the portal: Cognito generates a temporary password
-  # (valid temporary_password_validity_days) and emails it with this template.
+  # Accounts are created by the API (an admin's "Add user", or the public
+  # sign-up page): Cognito generates a temporary password (valid
+  # temporary_password_validity_days) and emails it with this template, so the
+  # wording must fit both.
   admin_create_user_config {
     allow_admin_create_user_only = true
 
@@ -99,10 +101,10 @@ resource "aws_cognito_user_pool" "this" {
       email_subject = "Your ${var.app_name} account"
       email_message = <<-EOT
         <p>Hello,</p>
-        <p>An administrator has created a ${var.app_name} account for you.</p>
+        <p>Your ${var.app_name} account is ready. If you didn't sign up and weren't expecting this, you can ignore this email.</p>
         <p>Username: <b>{username}</b><br>Temporary password: <b>{####}</b></p>
         <p>Sign in at <a href="${var.app_url}">${var.app_url}</a>. You will be asked to choose a new password and set up an authenticator app.</p>
-        <p>The temporary password expires in 3 days. If it has expired, ask your administrator to resend the invitation.</p>
+        <p>The temporary password expires in 3 days. If it has expired, sign up again with the same email or ask your administrator to resend it.</p>
       EOT
       # Required by the API even though the app sends no SMS (MFA is TOTP only).
       sms_message = "Your ${var.app_name} username is {username} and temporary password is {####}"
