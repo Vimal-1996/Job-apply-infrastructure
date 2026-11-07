@@ -19,7 +19,8 @@ data "aws_cloudfront_origin_request_policy" "all_viewer_except_host" { name = "M
 
 # ---------- Web bucket ----------
 resource "aws_s3_bucket" "web" {
-  bucket = "${var.name}-web-${data.aws_caller_identity.current.account_id}"
+  bucket        = "${var.name}-web-${data.aws_caller_identity.current.account_id}"
+  force_destroy = var.force_destroy
 }
 
 resource "aws_s3_bucket_public_access_block" "web" {

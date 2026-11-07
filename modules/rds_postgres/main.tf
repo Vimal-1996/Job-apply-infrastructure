@@ -58,6 +58,12 @@ variable "deletion_protection" {
   default = true
 }
 
+variable "skip_final_snapshot" {
+  description = "Delete without a final snapshot (only for an intentional teardown)."
+  type        = bool
+  default     = false
+}
+
 resource "aws_db_subnet_group" "this" {
   name       = "${var.name}-db"
   subnet_ids = var.subnet_ids
@@ -123,8 +129,8 @@ resource "aws_db_instance" "this" {
   copy_tags_to_snapshot      = true
 
   deletion_protection       = var.deletion_protection
-  skip_final_snapshot       = false
-  final_snapshot_identifier = "${var.name}-pg-final"
+  skip_final_snapshot       = var.skip_final_snapshot
+  final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.name}-pg-final"
 
   performance_insights_enabled          = true
   performance_insights_retention_period = 7

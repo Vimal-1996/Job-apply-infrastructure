@@ -45,6 +45,17 @@ locals {
   cognito_domain = "${local.name}-${data.aws_caller_identity.current.account_id}.auth.${local.region}.amazoncognito.com"
 }
 
+variable "allow_teardown" {
+  description = <<-EOT
+    false (default): production is protected from deletion: database and user
+    pool deletion protection on, final DB snapshot, non-empty buckets and image
+    registry can't be deleted. true: all of that is relaxed so
+    `terraform destroy` can remove everything. See docs/production.md.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "alarm_email" {
   description = "Where production alerts are sent (confirm the subscription email once)."
   type        = string
@@ -69,8 +80,9 @@ module "nat" {
 
 # ---------- Identity ----------
 module "public_assets" {
-  source = "../../modules/public_assets"
-  name   = local.name
+  source        = "../../modules/public_assets"
+  name          = local.name
+  force_destroy = var.allow_teardown
 }
 
 module "cognito" {
@@ -83,7 +95,7 @@ module "cognito" {
   logout_urls              = ["${module.web_edge.url}/"]
   app_url                  = module.web_edge.url
   logo_url                 = module.public_assets.logo_url
-  deletion_protection      = true
+  deletion_protection      = !var.allow_teardown
   case_sensitive_usernames = false
 }
 
@@ -95,12 +107,15 @@ module "db" {
   subnet_ids                = module.vpc.db_subnet_ids
   client_security_group_ids = [module.api.tasks_security_group_id]
   instance_class            = "db.t4g.micro"
+  deletion_protection       = !var.allow_teardown
+  skip_final_snapshot       = var.allow_teardown
 }
 
 # ---------- API ----------
 module "ecr" {
-  source = "../../modules/ecr"
-  name   = "${local.name}-api"
+  source       = "../../modules/ecr"
+  name         = "${local.name}-api"
+  force_delete = var.allow_teardown
 }
 
 module "api" {
@@ -138,6 +153,7 @@ module "web_edge" {
   api_alb_arn      = module.api.alb_arn
   api_alb_dns_name = module.api.alb_dns_name
   cognito_domain   = local.cognito_domain
+  force_destroy    = var.allow_teardown
 }
 
 # ---------- Alerts ----------
