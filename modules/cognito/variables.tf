@@ -57,6 +57,12 @@ variable "app_name" {
   default     = "Job Apply"
 }
 
+variable "logo_url" {
+  description = "HTTPS URL of a PNG logo shown at the top of emails Cognito sends. Empty = text only."
+  type        = string
+  default     = ""
+}
+
 variable "app_url" {
   description = "Where invited users sign in (linked from the invitation email)."
   type        = string
