@@ -66,8 +66,11 @@ resource "aws_cognito_user_pool" "this" {
   name                     = var.name
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
-  mfa_configuration        = "ON"
-  deletion_protection      = var.deletion_protection ? "ACTIVE" : "INACTIVE"
+  # OPTIONAL: Cognito asks for a code only from accounts with an authenticator
+  # app switched on. Normal users sign in with a password; administrators
+  # must have MFA switched on (the API refuses admin routes otherwise).
+  mfa_configuration   = "OPTIONAL"
+  deletion_protection = var.deletion_protection ? "ACTIVE" : "INACTIVE"
 
   software_token_mfa_configuration {
     enabled = true # TOTP authenticator apps only; no SMS (cost + SIM-swap risk)
@@ -103,7 +106,7 @@ resource "aws_cognito_user_pool" "this" {
         <p>Hello,</p>
         <p>Your ${var.app_name} account is ready. If you didn't sign up and weren't expecting this, you can ignore this email.</p>
         <p>Username: <b>{username}</b><br>Temporary password: <b>{####}</b></p>
-        <p>Sign in at <a href="${var.app_url}">${var.app_url}</a>. You will be asked to choose a new password and set up an authenticator app.</p>
+        <p>Sign in at <a href="${var.app_url}">${var.app_url}</a>. You will be asked to choose a new password.</p>
         <p>The temporary password expires in 3 days. If it has expired, sign up again with the same email or ask your administrator to resend it.</p>
       EOT
       # Required by the API even though the app sends no SMS (MFA is TOTP only).
