@@ -258,10 +258,19 @@ resource "aws_ecs_task_definition" "api" {
   }])
 }
 
+# Newest revision of the family: the deploy workflow registers revisions too.
+data "aws_ecs_task_definition" "latest" {
+  task_definition = aws_ecs_task_definition.api.family
+  depends_on      = [aws_ecs_task_definition.api]
+}
+
 resource "aws_ecs_service" "api" {
-  name                               = "api"
-  cluster                            = aws_ecs_cluster.this.id
-  task_definition                    = aws_ecs_task_definition.api.arn
+  name    = "api"
+  cluster = aws_ecs_cluster.this.id
+  # Whichever is newer: Terraform's revision (a config change) or the deploy
+  # workflow's (a new image). So Terraform never rolls a deploy back, even
+  # mid-deploy before the new image tag is recorded.
+  task_definition                    = aws_ecs_task_definition.api.revision >= data.aws_ecs_task_definition.latest.revision ? aws_ecs_task_definition.api.arn : data.aws_ecs_task_definition.latest.arn
   desired_count                      = var.min_tasks
   launch_type                        = "FARGATE"
   platform_version                   = "LATEST"
@@ -290,10 +299,9 @@ resource "aws_ecs_service" "api" {
   }
 
   lifecycle {
-    # Autoscaling owns the count. The task definition is NOT ignored: the deploy
-    # workflow registers a revision with the new image and records its tag in
-    # the image-tag parameter; Terraform builds the same image into its own
-    # revision, so config changes roll out with the deployed image.
+    # Autoscaling owns the count. Config changes still roll out: Terraform
+    # builds its revision with the deployed image (from the image-tag
+    # parameter), and a new revision is the newest one.
     ignore_changes = [desired_count]
   }
 
