@@ -57,9 +57,16 @@ module "budget" {
   email  = var.budget_email
 }
 
+# Publicly reachable static files (e.g. the logo in Cognito's emails).
+module "public_assets" {
+  source = "../../../modules/public_assets"
+  name   = "job-apply-dev"
+}
+
 module "cognito" {
   source               = "../../../modules/cognito"
   name                 = "job-apply-dev"
+  logo_url             = module.public_assets.logo_url
   allowed_emails       = var.allowed_emails
   google_client_id     = var.google_client_id
   google_client_secret = var.google_client_secret
@@ -70,6 +77,9 @@ output "cognito_web_client_id" { value = module.cognito.web_client_id }
 output "cognito_issuer" { value = module.cognito.issuer }
 output "cognito_jwks_url" { value = module.cognito.jwks_url }
 output "cognito_hosted_ui_domain" { value = module.cognito.hosted_ui_domain }
+
+output "public_assets_url" { value = module.public_assets.base_url }
+output "email_logo_url" { value = module.public_assets.logo_url }
 
 output "vpc_id" { value = module.vpc.vpc_id }
 output "public_subnet_ids" { value = module.vpc.public_subnet_ids }

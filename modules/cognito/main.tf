@@ -9,6 +9,15 @@ data "aws_caller_identity" "current" {}
 
 locals {
   google_enabled = var.google_client_id != ""
+
+  # Email header: logo + product name. Tables and inline styles because many
+  # email clients ignore stylesheets.
+  email_header = var.logo_url == "" ? "<p style=\"font:700 20px Arial,sans-serif;color:#161a26\">${var.app_name}</p>" : join("", [
+    "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 0 16px\"><tr>",
+    "<td style=\"padding-right:12px\"><img src=\"${var.logo_url}\" width=\"48\" height=\"48\" alt=\"${var.app_name} logo\" style=\"display:block;border:0\"></td>",
+    "<td style=\"font:700 22px Arial,sans-serif;color:#161a26\">${var.app_name}</td>",
+    "</tr></table>",
+  ])
 }
 
 # ---------- Pre-sign-up allowlist Lambda ----------
@@ -38,6 +47,7 @@ resource "aws_iam_role_policy_attachment" "pre_signup_logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# Allows ALLOWED_EMAILS through self sign-up / Google; admin-created users always pass.
 resource "aws_lambda_function" "pre_signup" {
   function_name    = "${var.name}-cognito-presignup"
   role             = aws_iam_role.pre_signup.arn
@@ -65,8 +75,11 @@ resource "aws_cognito_user_pool" "this" {
   name                     = var.name
   username_attributes      = ["email"]
   auto_verified_attributes = ["email"]
-  mfa_configuration        = "ON"
-  deletion_protection      = var.deletion_protection ? "ACTIVE" : "INACTIVE"
+  # OPTIONAL: Cognito asks for a code only from accounts with an authenticator
+  # app switched on. Normal users sign in with a password; administrators
+  # must have MFA switched on (the API refuses admin routes otherwise).
+  mfa_configuration   = "OPTIONAL"
+  deletion_protection = var.deletion_protection ? "ACTIVE" : "INACTIVE"
 
   software_token_mfa_configuration {
     enabled = true # TOTP authenticator apps only; no SMS (cost + SIM-swap risk)
@@ -89,8 +102,26 @@ resource "aws_cognito_user_pool" "this" {
   }
 
   # Sign-up for native accounts is admin-only; the Lambda also gates Google.
+  # Accounts are created by the API (an admin's "Add user", or the public
+  # sign-up page): Cognito generates a temporary password (valid
+  # temporary_password_validity_days) and emails it with this template, so the
+  # wording must fit both.
   admin_create_user_config {
     allow_admin_create_user_only = true
+
+    invite_message_template {
+      email_subject = "Your ${var.app_name} account"
+      email_message = <<-EOT
+        ${local.email_header}
+        <p>Hello,</p>
+        <p>Your ${var.app_name} account is ready. If you didn't sign up and weren't expecting this, you can ignore this email.</p>
+        <p>Username: <b>{username}</b><br>Temporary password: <b>{####}</b></p>
+        <p>Sign in at <a href="${var.app_url}">${var.app_url}</a>. You will be asked to choose a new password.</p>
+        <p>The temporary password expires in 3 days. If it has expired, sign up again with the same email or ask your administrator to resend it.</p>
+      EOT
+      # Required by the API even though the app sends no SMS (MFA is TOTP only).
+      sms_message = "Your ${var.app_name} username is {username} and temporary password is {####}"
+    }
   }
 
   lambda_config {
