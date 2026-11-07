@@ -4,7 +4,7 @@ variable "name" {
 }
 
 variable "allowed_emails" {
-  description = "Only these emails may have an account (enforced by a pre-sign-up Lambda)."
+  description = "Emails allowed to self sign-up or sign in with Google (pre-sign-up Lambda). Users an admin creates are always allowed."
   type        = list(string)
 }
 
@@ -19,11 +19,18 @@ variable "logout_urls" {
 }
 
 variable "groups" {
-  description = "Cognito groups (surface as the cognito:groups claim used for RBAC)."
+  description = <<-EOT
+    Cognito groups (surface as the cognito:groups claim). admin/user are roles
+    used for RBAC; inactive/deleted mark accounts an admin has deactivated or
+    soft-deleted in the app, which the API then refuses with a
+    "contact your administrator" message.
+  EOT
   type        = map(string)
   default = {
-    admin = "Full access"
-    user  = "Standard access"
+    admin    = "Full access"
+    user     = "Standard access"
+    inactive = "Deactivated by an administrator; sign-in is refused"
+    deleted  = "Deleted by an administrator (soft delete); sign-in is refused"
   }
 }
 
@@ -42,4 +49,16 @@ variable "google_client_secret" {
 variable "deletion_protection" {
   type    = bool
   default = false
+}
+
+variable "app_name" {
+  description = "Product name used in emails Cognito sends."
+  type        = string
+  default     = "Job Apply"
+}
+
+variable "app_url" {
+  description = "Where invited users sign in (linked from the invitation email)."
+  type        = string
+  default     = "http://localhost:5173"
 }
