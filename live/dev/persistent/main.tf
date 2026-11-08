@@ -63,6 +63,13 @@ module "public_assets" {
   name   = "job-apply-dev"
 }
 
+# Users' private files (resumes). The local web app uploads to it directly.
+module "user_files" {
+  source          = "../../../modules/user_files"
+  name            = "job-apply-dev"
+  allowed_origins = ["http://localhost:5173"]
+}
+
 module "cognito" {
   source               = "../../../modules/cognito"
   name                 = "job-apply-dev"
@@ -80,6 +87,8 @@ output "cognito_hosted_ui_domain" { value = module.cognito.hosted_ui_domain }
 
 output "public_assets_url" { value = module.public_assets.base_url }
 output "email_logo_url" { value = module.public_assets.logo_url }
+
+output "user_files_bucket" { value = module.user_files.bucket_name }
 
 output "vpc_id" { value = module.vpc.vpc_id }
 output "public_subnet_ids" { value = module.vpc.public_subnet_ids }

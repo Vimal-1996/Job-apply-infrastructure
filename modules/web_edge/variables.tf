@@ -16,6 +16,12 @@ variable "cognito_domain" {
   type        = string
 }
 
+variable "extra_connect_src" {
+  description = "More addresses the web app may call from the browser (e.g. the user-files bucket for uploads)."
+  type        = list(string)
+  default     = []
+}
+
 variable "rate_limit_per_5min" {
   description = "Requests per IP per 5 minutes before the WAF blocks (all paths)."
   type        = number

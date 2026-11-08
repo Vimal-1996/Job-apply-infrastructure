@@ -31,6 +31,12 @@ variable "db_secret_arn" {
 
 variable "user_pool_arn" { type = string }
 
+variable "extra_task_policy_statements" {
+  description = "More IAM statements for the API's task role (e.g. access to a user-files bucket)."
+  type        = any
+  default     = []
+}
+
 variable "cpu" {
   type    = number
   default = 256

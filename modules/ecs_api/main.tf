@@ -200,6 +200,13 @@ resource "aws_iam_role_policy" "task_cognito" {
   })
 }
 
+resource "aws_iam_role_policy" "task_extra" {
+  count  = length(var.extra_task_policy_statements) > 0 ? 1 : 0
+  name   = "extra"
+  role   = aws_iam_role.task.id
+  policy = jsonencode({ Version = "2012-10-17", Statement = var.extra_task_policy_statements })
+}
+
 # ---------- Task definition and service ----------
 resource "aws_cloudwatch_log_group" "api" {
   name              = "/ecs/${var.name}-api"
