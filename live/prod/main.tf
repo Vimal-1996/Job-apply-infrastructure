@@ -111,6 +111,14 @@ module "db" {
   skip_final_snapshot       = var.allow_teardown
 }
 
+# Users' private files (resumes); the browser uploads to it directly.
+module "user_files" {
+  source          = "../../modules/user_files"
+  name            = local.name
+  allowed_origins = [module.web_edge.url]
+  force_destroy   = var.allow_teardown
+}
+
 # ---------- API ----------
 module "ecr" {
   source       = "../../modules/ecr"
@@ -119,17 +127,19 @@ module "ecr" {
 }
 
 module "api" {
-  source             = "../../modules/ecs_api"
-  name               = local.name
-  vpc_id             = module.vpc.vpc_id
-  vpc_cidr           = module.vpc.vpc_cidr
-  private_subnet_ids = module.vpc.private_subnet_ids
-  repository_url     = module.ecr.repository_url
-  db_secret_arn      = module.db.master_secret_arn
-  user_pool_arn      = module.cognito.user_pool_arn
-  min_tasks          = 2
-  max_tasks          = 6
+  source                       = "../../modules/ecs_api"
+  name                         = local.name
+  vpc_id                       = module.vpc.vpc_id
+  vpc_cidr                     = module.vpc.vpc_cidr
+  private_subnet_ids           = module.vpc.private_subnet_ids
+  repository_url               = module.ecr.repository_url
+  db_secret_arn                = module.db.master_secret_arn
+  user_pool_arn                = module.cognito.user_pool_arn
+  min_tasks                    = 2
+  max_tasks                    = 6
+  extra_task_policy_statements = module.user_files.api_policy_statements
   environment = {
+    USER_FILES_BUCKET    = module.user_files.bucket_name
     NODE_ENV             = "production"
     API_BASE_PATH        = "/api"
     TRUST_PROXY_HOPS     = "2" # CloudFront + load balancer
@@ -147,13 +157,14 @@ module "api" {
 
 # ---------- Edge ----------
 module "web_edge" {
-  source           = "../../modules/web_edge"
-  name             = local.name
-  region           = local.region
-  api_alb_arn      = module.api.alb_arn
-  api_alb_dns_name = module.api.alb_dns_name
-  cognito_domain   = local.cognito_domain
-  force_destroy    = var.allow_teardown
+  source            = "../../modules/web_edge"
+  name              = local.name
+  region            = local.region
+  api_alb_arn       = module.api.alb_arn
+  api_alb_dns_name  = module.api.alb_dns_name
+  cognito_domain    = local.cognito_domain
+  force_destroy     = var.allow_teardown
+  extra_connect_src = [module.user_files.upload_origin]
 }
 
 # ---------- Alerts ----------

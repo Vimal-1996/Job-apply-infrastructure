@@ -143,7 +143,7 @@ locals {
     "img-src 'self' data:",
     "font-src 'self'",
     # Sign-in: OIDC discovery/keys on cognito-idp, tokens on the pool's domain.
-    "connect-src 'self' https://cognito-idp.${var.region}.amazonaws.com https://${var.cognito_domain}",
+    join(" ", concat(["connect-src 'self' https://cognito-idp.${var.region}.amazonaws.com https://${var.cognito_domain}"], var.extra_connect_src)),
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self' https://${var.cognito_domain}",
