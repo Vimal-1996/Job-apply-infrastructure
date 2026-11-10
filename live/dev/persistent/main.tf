@@ -74,6 +74,7 @@ module "cognito" {
   source               = "../../../modules/cognito"
   name                 = "job-apply-dev"
   logo_url             = module.public_assets.logo_url
+  extension_ids        = ["cokfldkgmphbfkjjndlgbmplcekepkdh"] # Job Apply Chrome extension (fixed by the key in its manifest)
   allowed_emails       = var.allowed_emails
   google_client_id     = var.google_client_id
   google_client_secret = var.google_client_secret
