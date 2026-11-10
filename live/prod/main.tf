@@ -93,6 +93,7 @@ module "cognito" {
   allowed_emails           = []
   callback_urls            = ["${module.web_edge.url}/callback"]
   logout_urls              = ["${module.web_edge.url}/"]
+  extension_ids            = ["cokfldkgmphbfkjjndlgbmplcekepkdh"] # Job Apply Chrome extension (fixed by the key in its manifest)
   app_url                  = module.web_edge.url
   logo_url                 = module.public_assets.logo_url
   deletion_protection      = !var.allow_teardown

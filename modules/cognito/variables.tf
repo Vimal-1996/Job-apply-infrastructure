@@ -13,6 +13,16 @@ variable "callback_urls" {
   default = ["http://localhost:5173/callback"]
 }
 
+variable "extension_ids" {
+  description = <<-EOT
+    Chrome extension IDs allowed to sign in with the web app's client. Each gets
+    the redirect https://<id>.chromiumapp.org/ that chrome.identity uses. The
+    extension shares the web client so the API accepts its tokens unchanged.
+  EOT
+  type        = list(string)
+  default     = []
+}
+
 variable "logout_urls" {
   type    = list(string)
   default = ["http://localhost:5173/"]

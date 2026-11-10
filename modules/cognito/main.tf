@@ -201,7 +201,7 @@ resource "aws_cognito_user_pool_client" "web" {
   allowed_oauth_flows_user_pool_client = true
   allowed_oauth_flows                  = ["code"]
   allowed_oauth_scopes                 = ["openid", "email", "profile"]
-  callback_urls                        = var.callback_urls
+  callback_urls                        = concat(var.callback_urls, [for id in var.extension_ids : "https://${id}.chromiumapp.org/"])
   logout_urls                          = var.logout_urls
   supported_identity_providers         = local.google_enabled ? ["COGNITO", "Google"] : ["COGNITO"]
 
