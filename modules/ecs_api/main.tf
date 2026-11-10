@@ -162,12 +162,17 @@ resource "aws_iam_role_policy_attachment" "execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# Lets ECS read the container's secrets at start-up (and nothing else).
 resource "aws_iam_role_policy" "execution_secrets" {
   name = "db-secret"
   role = aws_iam_role.execution.id
   policy = jsonencode({
-    Version   = "2012-10-17"
-    Statement = [{ Effect = "Allow", Action = ["secretsmanager:GetSecretValue"], Resource = [var.db_secret_arn] }]
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow",
+      Action   = ["secretsmanager:GetSecretValue"],
+      Resource = concat([var.db_secret_arn], values(var.extra_secrets))
+    }]
   })
 }
 
@@ -243,10 +248,13 @@ resource "aws_ecs_task_definition" "api" {
     stopTimeout            = 30
     portMappings           = [{ containerPort = local.port, protocol = "tcp" }]
     environment            = [for k, v in var.environment : { name = k, value = v }]
-    secrets = [
-      { name = "DB_USER", valueFrom = "${var.db_secret_arn}:username::" },
-      { name = "DB_PASSWORD", valueFrom = "${var.db_secret_arn}:password::" },
-    ]
+    secrets = concat(
+      [
+        { name = "DB_USER", valueFrom = "${var.db_secret_arn}:username::" },
+        { name = "DB_PASSWORD", valueFrom = "${var.db_secret_arn}:password::" },
+      ],
+      [for k, arn in var.extra_secrets : { name = k, valueFrom = arn }],
+    )
     healthCheck = {
       command     = ["CMD-SHELL", "wget -qO- http://127.0.0.1:${local.port}${local.health_path} >/dev/null || exit 1"]
       interval    = 15

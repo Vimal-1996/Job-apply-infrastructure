@@ -48,6 +48,20 @@ Browser ──HTTPS──▶ CloudFront  https://<id>.cloudfront.net   (+ WAF)
    terraform plan   # should show no changes for the pool
    ```
 
+## AI key (Anthropic)
+
+The AI features (reading resumes into profiles, matching jobs, tailoring resumes) need an Anthropic API key. It lives in Secrets Manager as **`job-apply/anthropic-api-key`**, created once by hand and **not** managed by Terraform. So it survives prod teardowns, and its value never enters Terraform state or GitHub.
+
+```sh
+# Once. Reads the key without echoing it or saving it in shell history.
+read -rs KEY && aws secretsmanager create-secret --name job-apply/anthropic-api-key --secret-string "$KEY"; unset KEY
+```
+
+- **prod-apply** looks the secret up by name. If it exists, ECS passes it to the API as `ANTHROPIC_API_KEY`, and only the task's start-up role may read it. If it doesn't, prod still deploys and the AI features say they're switched off.
+- **Adding it later:** create the secret, then run **prod-apply** (the task definition changes) so new tasks get it.
+- **Rotating it:** `aws secretsmanager put-secret-value --secret-id job-apply/anthropic-api-key --secret-string "$KEY"`, then redeploy the API (**deploy-prod**, target `api`). Running tasks keep the old value until replaced.
+- **Spend:** use a separate key for prod in the Anthropic Console, with its own spend limit, so prod usage is visible and can be revoked without touching local development.
+
 ## Deploying
 
 - **App:** Actions → **deploy-prod** on `main`. Targets: `all`, `api` or `web`.

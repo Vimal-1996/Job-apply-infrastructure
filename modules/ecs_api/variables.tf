@@ -29,6 +29,12 @@ variable "db_secret_arn" {
   type        = string
 }
 
+variable "extra_secrets" {
+  description = "More secrets for the container: environment variable name => Secrets Manager secret ARN (the whole secret string becomes the value)."
+  type        = map(string)
+  default     = {}
+}
+
 variable "user_pool_arn" { type = string }
 
 variable "extra_task_policy_statements" {

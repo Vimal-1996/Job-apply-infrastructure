@@ -120,6 +120,32 @@ module "user_files" {
 }
 
 # ---------- API ----------
+# The Anthropic API key for the app's AI features (reading resumes, matching
+# jobs, tailoring resumes). Created once by hand, outside Terraform, so it
+# survives prod teardowns and its value never enters Terraform state:
+#   aws secretsmanager create-secret --name job-apply/anthropic-api-key --secret-string '<key>'
+# If it doesn't exist, prod still deploys and the AI features say they're off.
+data "aws_secretsmanager_secrets" "anthropic" {
+  filter {
+    name   = "name"
+    values = [local.anthropic_secret_name]
+  }
+}
+
+locals {
+  anthropic_secret_name = "job-apply/anthropic-api-key"
+}
+
+# The name filter above also matches longer names, so check for the exact one.
+data "aws_secretsmanager_secret" "anthropic" {
+  count = contains(tolist(data.aws_secretsmanager_secrets.anthropic.names), local.anthropic_secret_name) ? 1 : 0
+  name  = local.anthropic_secret_name
+}
+
+locals {
+  anthropic_secret_arn = one(data.aws_secretsmanager_secret.anthropic[*].arn)
+}
+
 module "ecr" {
   source       = "../../modules/ecr"
   name         = "${local.name}-api"
@@ -138,6 +164,7 @@ module "api" {
   min_tasks                    = 2
   max_tasks                    = 6
   extra_task_policy_statements = module.user_files.api_policy_statements
+  extra_secrets                = local.anthropic_secret_arn == null ? {} : { ANTHROPIC_API_KEY = local.anthropic_secret_arn }
   environment = {
     USER_FILES_BUCKET    = module.user_files.bucket_name
     NODE_ENV             = "production"
